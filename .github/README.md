@@ -140,6 +140,13 @@ The easiest way to use the tool for users with Settings section access is to cal
 | `GET /umbraco/ufmextensions/api/v1/evaluateBlockLabelsToUfm?UseDragonflyUfmComponents=true` | Returns the report of how each label would convert; saves nothing |
 | `POST /umbraco/ufmextensions/api/v1/convertBlockLabelsToUfm?UseDragonflyUfmComponents=true` | Converts the labels and saves the changed datatypes               |
 
+`ListViewLabelUfmMigrator` does the same for the label templates (`nameTemplate`) on the columns of every List View datatype, with the same query parameters and report shape (each change names its `Column` instead of a `Block`):
+
+| Request                                                                                        | Does                                                              |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `GET /umbraco/ufmextensions/api/v1/evaluateListViewLabelsToUfm?UseDragonflyUfmComponents=true` | Returns the report of how each label would convert; saves nothing |
+| `POST /umbraco/ufmextensions/api/v1/convertListViewLabelsToUfm?UseDragonflyUfmComponents=true` | Converts the labels and saves the changed datatypes               |
+
 Run the GET first to see what will change, then POST to actually convert. The `UseDragonflyUfmComponents` query parameter indicates whether to use this package's UFM components or only Umbraco's built-in components. 
 
 `UseDragonflyUfmComponents`=`true` (default) : Use this package's UFM components wherever they cover an expression, so the package must stay installed for the labels to render. 

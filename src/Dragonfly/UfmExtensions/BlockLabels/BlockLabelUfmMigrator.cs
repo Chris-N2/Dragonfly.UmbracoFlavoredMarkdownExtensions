@@ -24,55 +24,15 @@ public sealed class BlockLabelUfmMigrator(
 	IContentTypeService contentTypeService,
 	IConfigurationEditorJsonSerializer configurationSerializer,
 	ILogger<BlockLabelUfmMigrator> logger)
+	: LabelUfmMigratorBase<BlockLabelUfmReport, BlockLabelChange>(dataTypeService, configurationSerializer, logger)
 {
-	private static readonly string[] BlockEditorAliases = ["Umbraco.BlockList", "Umbraco.BlockGrid"];
+	protected override string[] EditorAliases { get; } = ["Umbraco.BlockList", "Umbraco.BlockGrid"];
 
-	public async Task<BlockLabelUfmReport> RunAsync(bool DryRun, Guid UserKey, bool UseDragonflyUfmComponents = true, bool KeepIndexOneBased = true)
-	{
-		var report = new BlockLabelUfmReport
-		{
-			DryRun = DryRun,
-			UseDragonflyUfmComponents = UseDragonflyUfmComponents,
-			KeepIndexOneBased = KeepIndexOneBased,
-		};
+	protected override bool ConvertConfiguration(IDataType DataType, JsonObject Configuration, BlockLabelUfmReport Report)
+		=> ConvertBlocks(DataType, Configuration, Report);
 
-		var dataTypes = (await dataTypeService.GetAllAsync())
-			.Where(x => BlockEditorAliases.Contains(x.EditorAlias))
-			.ToList();
-
-		foreach (var dataType in dataTypes)
-		{
-			report.DataTypesScanned++;
-
-			var configuration = JsonNode.Parse(configurationSerializer.Serialize(dataType.ConfigurationData))?.AsObject();
-			if (configuration is null)
-			{
-				continue;
-			}
-
-			var changed = ConvertBlocks(dataType, configuration, report);
-
-			if (!changed || DryRun)
-			{
-				continue;
-			}
-
-			var updated = configurationSerializer.Deserialize<Dictionary<string, object>>(configuration.ToJsonString());
-			if (updated is null)
-			{
-				logger.LogWarning("BlockLabelUfmMigrator : Unable to rebuild the configuration for datatype '{DataTypeName}'", dataType.Name);
-				continue;
-			}
-
-			dataType.ConfigurationData = updated;
-			await dataTypeService.UpdateAsync(dataType, UserKey);
-			report.DataTypesSaved++;
-
-			logger.LogInformation("BlockLabelUfmMigrator : Updated block labels on datatype '{DataTypeName}'", dataType.Name);
-		}
-
-		return report;
-	}
+	protected override BlockLabelChange CreateChange(IDataType DataType, string Description, string PropertyName, BlockLabelConversion Conversion, bool Applied)
+		=> BlockLabelChange.From(DataType, Description, PropertyName, Conversion, Applied);
 
 	private bool ConvertBlocks(IDataType DataType, JsonObject Configuration, BlockLabelUfmReport Report)
 	{
@@ -97,29 +57,6 @@ public sealed class BlockLabelUfmMigrator(
 		return changed;
 	}
 
-	private bool ConvertLabel(JsonObject Owner, string PropertyName, IDataType DataType, string? ContentTypeName, string Description, BlockLabelUfmReport Report)
-	{
-		var label = Owner[PropertyName]?.GetValue<string>();
-		var conversion = BlockLabelUfmConverter.Convert(label, ContentTypeName, Report.UseDragonflyUfmComponents, Report.KeepIndexOneBased);
-
-		switch (conversion.Status)
-		{
-			case BlockLabelConversionStatus.NoChangeNeeded:
-				Report.LabelsUnchanged.Add(BlockLabelChange.From(DataType, Description, PropertyName, conversion, Applied: false));
-				return false;
-
-			//Half-converting a label that needs a UFM component would leave it broken, so leave it as it is.
-			case BlockLabelConversionStatus.NeedsManualReview:
-				Report.LabelsNeedingReview.Add(BlockLabelChange.From(DataType, Description, PropertyName, conversion, Applied: false));
-				return false;
-
-			default:
-				Owner[PropertyName] = conversion.ConvertedLabel;
-				Report.LabelsConverted.Add(BlockLabelChange.From(DataType, Description, PropertyName, conversion, Applied: !Report.DryRun));
-				return true;
-		}
-	}
-
 	private string? ContentTypeName(string? ContentElementTypeKey)
 	{
 		return Guid.TryParse(ContentElementTypeKey, out var key)
@@ -128,29 +65,8 @@ public sealed class BlockLabelUfmMigrator(
 	}
 }
 
-public class BlockLabelUfmReport
+public class BlockLabelUfmReport : LabelUfmReport<BlockLabelChange>
 {
-	public bool DryRun { get; set; }
-
-	public bool UseDragonflyUfmComponents { get; set; }
-
-	public bool KeepIndexOneBased { get; set; }
-
-	public int DataTypesScanned { get; set; }
-
-	public int DataTypesSaved { get; set; }
-
-	public int LabelsNeedingReviewCount => LabelsNeedingReview.Count;
-
-	public int LabelsConvertedCount => LabelsConverted.Count;
-
-	public int LabelsUnchangedCount => LabelsUnchanged.Count;
-
-	public List<BlockLabelChange> LabelsNeedingReview { get; set; } = [];
-
-	public List<BlockLabelChange> LabelsConverted { get; set; } = [];
-
-	public List<BlockLabelChange> LabelsUnchanged { get; set; } = [];
 }
 
 public class BlockLabelChange

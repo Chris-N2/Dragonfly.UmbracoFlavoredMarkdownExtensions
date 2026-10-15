@@ -29,6 +29,31 @@ export type BlockLabelUfmReport = {
     labelsUnchanged: Array<BlockLabelChange>;
 };
 
+export type ListViewLabelChange = {
+    dataTypeName: string;
+    column: string;
+    property: string;
+    originalLabel: string;
+    convertedLabel: string;
+    status: string;
+    applied: boolean;
+    warnings: Array<string>;
+};
+
+export type ListViewLabelUfmReport = {
+    dryRun: boolean;
+    useDragonflyUfmComponents: boolean;
+    keepIndexOneBased: boolean;
+    dataTypesScanned: number;
+    dataTypesSaved: number;
+    readonly labelsNeedingReviewCount: number;
+    readonly labelsConvertedCount: number;
+    readonly labelsUnchangedCount: number;
+    labelsNeedingReview: Array<ListViewLabelChange>;
+    labelsConverted: Array<ListViewLabelChange>;
+    labelsUnchanged: Array<ListViewLabelChange>;
+};
+
 export type UfmSyntaxCheck = {
     label: string;
     readonly issueCount: number;
@@ -49,6 +74,17 @@ export type BlockLabelUfmReportWritable = {
     labelsNeedingReview: Array<BlockLabelChange>;
     labelsConverted: Array<BlockLabelChange>;
     labelsUnchanged: Array<BlockLabelChange>;
+};
+
+export type ListViewLabelUfmReportWritable = {
+    dryRun: boolean;
+    useDragonflyUfmComponents: boolean;
+    keepIndexOneBased: boolean;
+    dataTypesScanned: number;
+    dataTypesSaved: number;
+    labelsNeedingReview: Array<ListViewLabelChange>;
+    labelsConverted: Array<ListViewLabelChange>;
+    labelsUnchanged: Array<ListViewLabelChange>;
 };
 
 export type UfmSyntaxCheckWritable = {
@@ -107,6 +143,32 @@ export type ConvertBlockLabelsResponses = {
 
 export type ConvertBlockLabelsResponse = ConvertBlockLabelsResponses[keyof ConvertBlockLabelsResponses];
 
+export type ConvertListViewLabelsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        UseDragonflyUfmComponents?: boolean;
+        KeepIndexOneBased?: boolean;
+    };
+    url: '/umbraco/ufmextensions/api/v1/convertListViewLabelsToUfm';
+};
+
+export type ConvertListViewLabelsErrors = {
+    /**
+     * The resource is protected and requires an authentication token
+     */
+    401: unknown;
+};
+
+export type ConvertListViewLabelsResponses = {
+    /**
+     * OK
+     */
+    200: ListViewLabelUfmReport;
+};
+
+export type ConvertListViewLabelsResponse = ConvertListViewLabelsResponses[keyof ConvertListViewLabelsResponses];
+
 export type EvaluateBlockLabelsData = {
     body?: never;
     path?: never;
@@ -132,6 +194,32 @@ export type EvaluateBlockLabelsResponses = {
 };
 
 export type EvaluateBlockLabelsResponse = EvaluateBlockLabelsResponses[keyof EvaluateBlockLabelsResponses];
+
+export type EvaluateListViewLabelsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        UseDragonflyUfmComponents?: boolean;
+        KeepIndexOneBased?: boolean;
+    };
+    url: '/umbraco/ufmextensions/api/v1/evaluateListViewLabelsToUfm';
+};
+
+export type EvaluateListViewLabelsErrors = {
+    /**
+     * The resource is protected and requires an authentication token
+     */
+    401: unknown;
+};
+
+export type EvaluateListViewLabelsResponses = {
+    /**
+     * OK
+     */
+    200: ListViewLabelUfmReport;
+};
+
+export type EvaluateListViewLabelsResponse = EvaluateListViewLabelsResponses[keyof EvaluateListViewLabelsResponses];
 
 export type PingData = {
     body?: never;

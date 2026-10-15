@@ -123,6 +123,9 @@ Block labels render in two separate places, which matters for any component read
   converting `blocks[].label` and Block Grid `blocks[].areas[].createLabel`. It works on a JSON copy
   of `ConfigurationData` and only writes back when something changed and `DryRun` is false.
   `BlockLabelUfmComposer` registers it as transient, so a consuming site can inject it.
+- **`ListViewLabelUfmMigrator`** — the same walk over `Umbraco.ListView` datatypes, converting the
+  `nameTemplate` of each `includeProperties` column that has one. Both migrators share
+  `LabelUfmMigratorBase` (the datatype loop, dry-run and save logic) and `LabelUfmReport<TChange>`.
 
 Conversion rules worth knowing:
 

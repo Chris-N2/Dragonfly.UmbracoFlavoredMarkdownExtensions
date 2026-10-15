@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CheckUfmSyntaxData, CheckUfmSyntaxErrors, CheckUfmSyntaxResponses, ConvertBlockLabelsData, ConvertBlockLabelsErrors, ConvertBlockLabelsResponses, EvaluateBlockLabelsData, EvaluateBlockLabelsErrors, EvaluateBlockLabelsResponses, PingData, PingErrors, PingResponses } from './types.gen';
+import type { CheckUfmSyntaxData, CheckUfmSyntaxErrors, CheckUfmSyntaxResponses, ConvertBlockLabelsData, ConvertBlockLabelsErrors, ConvertBlockLabelsResponses, ConvertListViewLabelsData, ConvertListViewLabelsErrors, ConvertListViewLabelsResponses, EvaluateBlockLabelsData, EvaluateBlockLabelsErrors, EvaluateBlockLabelsResponses, EvaluateListViewLabelsData, EvaluateListViewLabelsErrors, EvaluateListViewLabelsResponses, PingData, PingErrors, PingResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -35,10 +35,26 @@ export class UmbracoFlavoredMarkdownExtensionsService {
         });
     }
     
+    public static convertListViewLabels<ThrowOnError extends boolean = false>(options?: Options<ConvertListViewLabelsData, ThrowOnError>): RequestResult<ConvertListViewLabelsResponses, ConvertListViewLabelsErrors, ThrowOnError> {
+        return (options?.client ?? client).post<ConvertListViewLabelsResponses, ConvertListViewLabelsErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/umbraco/ufmextensions/api/v1/convertListViewLabelsToUfm',
+            ...options
+        });
+    }
+    
     public static evaluateBlockLabels<ThrowOnError extends boolean = false>(options?: Options<EvaluateBlockLabelsData, ThrowOnError>): RequestResult<EvaluateBlockLabelsResponses, EvaluateBlockLabelsErrors, ThrowOnError> {
         return (options?.client ?? client).get<EvaluateBlockLabelsResponses, EvaluateBlockLabelsErrors, ThrowOnError>({
             security: [{ scheme: 'bearer', type: 'http' }],
             url: '/umbraco/ufmextensions/api/v1/evaluateBlockLabelsToUfm',
+            ...options
+        });
+    }
+    
+    public static evaluateListViewLabels<ThrowOnError extends boolean = false>(options?: Options<EvaluateListViewLabelsData, ThrowOnError>): RequestResult<EvaluateListViewLabelsResponses, EvaluateListViewLabelsErrors, ThrowOnError> {
+        return (options?.client ?? client).get<EvaluateListViewLabelsResponses, EvaluateListViewLabelsErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/umbraco/ufmextensions/api/v1/evaluateListViewLabelsToUfm',
             ...options
         });
     }
