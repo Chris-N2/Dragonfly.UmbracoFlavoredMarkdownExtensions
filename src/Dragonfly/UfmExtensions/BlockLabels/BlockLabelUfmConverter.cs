@@ -27,9 +27,9 @@ public static class BlockLabelUfmConverter
 	private static readonly Regex LinkDisplay = new(
 		@"^(\w+)\[0\]\[""nodeName""\]\s*\?\s*\1\[0\]\[""nodeName""\]\s*:\s*\(?\s*\1\[0\]\[""name""\]\s*\?\s*\1\[0\]\[""name""\]\s*:\s*\1\[0\]\[""url""\]\s*\)?$",
 		RegexOptions.Compiled);
-	//umbContentName already joins the names of several picked items with ", ", so a ", " join before the name filter is covered by it.
-	private static readonly Regex PickerName = new(
-		@"^(\w+)\s*\|\s*(?:umbCmsJoinArray\s*:\s*(?:', '|"", "")\s*\|\s*)?nc(?:Node|Media)Name$",
+	private static readonly Regex PickerName = new(@"^(\w+)\s*\|\s*nc(?:Node|Media)Name$", RegexOptions.Compiled);
+	private static readonly Regex JoinedPickerNames = new(
+		@"^(\w+)\s*\|\s*umbCmsJoinArray\s*:\s*(?:', '|"", "")\s*\|\s*nc(?:Node|Media)Name$",
 		RegexOptions.Compiled);
 
 	//A property of the first block in a Block List or Block Grid value, e.g. value["contentData"][0]["Link"]. Group "blocks" is the
@@ -61,6 +61,8 @@ public static class BlockLabelUfmConverter
 		new(ArgumentFrom(LinkUrl), DragonflyAlias: "dufmLinkUrl", BuiltInAlias: null),
 		new(ArgumentFrom(LinkName), DragonflyAlias: "umbLink", BuiltInAlias: "umbLink"),
 		new(ArgumentFrom(PickerName), DragonflyAlias: "umbContentName", BuiltInAlias: "umbContentName"),
+		//A list of picked items, such as a Contentment Data List, holds udi strings that umbContentName ignores; dufmFirstValue reads them.
+		new(ArgumentFrom(JoinedPickerNames), DragonflyAlias: "dufmFirstValue", BuiltInAlias: "umbContentName"),
 		new(FallbackChainArgument, DragonflyAlias: "dufmFirstValue", BuiltInAlias: null),
 		new(FirstBlockValueArgument, DragonflyAlias: "dufmFirstBlockValue", BuiltInAlias: null),
 	];
@@ -117,6 +119,13 @@ public static class BlockLabelUfmConverter
 		var component = ComponentFor(expression, UseDragonflyUfmComponents);
 		if (component is not null)
 		{
+			//umbContentName ignores the udi strings a list of picked items, such as a Contentment Data List, is stored as.
+			var joinedPickerNames = JoinedPickerNames.Match(expression);
+			if (!UseDragonflyUfmComponents && joinedPickerNames.Success)
+			{
+				Conversion.Warnings.Add($"'{expression}' becomes {component}, which shows nothing when '{joinedPickerNames.Groups[1].Value}' holds a list of udi strings, such as a Contentment Data List: check the column shows names, or convert with UseDragonflyUfmComponents=true to use {{dufmFirstValue: {joinedPickerNames.Groups[1].Value}}}.");
+			}
+
 			return component;
 		}
 

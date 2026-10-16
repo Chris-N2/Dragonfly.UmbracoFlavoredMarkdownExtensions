@@ -150,8 +150,13 @@ Conversion rules worth knowing:
   Without `UseDragonflyUfmComponents` a chain stays an expression, except one holding a picked
   item's name, which has no built-in equivalent and needs manual review.
 - `value | umbCmsJoinArray:', ' | ncNodeName` (a List View column showing several picked items) becomes
-  `{umbContentName: value}`: the render context for a List View column label is `{ value: <column value> }`,
-  and `umbContentName` resolves every picked item and joins the names with `", "`. Other separators
+  `{dufmFirstValue: value}` with `UseDragonflyUfmComponents`: the render context for a List View column
+  label is `{ value: <column value> }`, and `dufmFirstValue` resolves every picked item and joins the names
+  with `", "`. It is used instead of `umbContentName` because a list of picked items, such as a Contentment
+  Data List on the Umbraco Content source, holds udi strings (`umb://document/…`) that `umbContentName`
+  ignores, so the column would be blank. Without `UseDragonflyUfmComponents` it becomes
+  `{umbContentName: value}`, which only reads `{type, unique}` objects and GUIDs, so it carries a warning
+  (and is reported as `NeedsManualReview`, not saved) to check the column shows names. Other separators
   stay manual review.
 - `value["contentData"][0]["X"]` (a List View column over a Block List, reading the first block) becomes
   `{dufmFirstBlockValue: value, X}`, as does the link name chain

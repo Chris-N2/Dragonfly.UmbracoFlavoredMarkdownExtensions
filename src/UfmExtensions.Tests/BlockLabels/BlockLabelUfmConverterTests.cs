@@ -46,7 +46,7 @@ public class BlockLabelUfmConverterTests
 	[InlineData("""{{Link[0]["name"]}}""", "{umbLink: Link}")]
 	[InlineData("{{Layout | ncNodeName}}", "{umbContentName: Layout}")]
 	[InlineData("{{Image | ncMediaName}}", "{umbContentName: Image}")]
-	[InlineData("{{ value | umbCmsJoinArray:', ' |  ncNodeName}}", "{umbContentName: value}")]
+	[InlineData("{{ value | umbCmsJoinArray:', ' |  ncNodeName}}", "{dufmFirstValue: value}")]
 	[InlineData(FirstBlockLinkDisplayLabel, "{dufmFirstBlockValue: value, Link}")]
 	[InlineData("""{{value["contentData"][0]["Link"][0]["url"]}}""", "{dufmFirstBlockValue: value, Link, Url}")]
 	[InlineData("""{{value["contentData"][0]["Title"]}}""", "{dufmFirstBlockValue: value, Title}")]
@@ -63,7 +63,6 @@ public class BlockLabelUfmConverterTests
 	[InlineData(LinkDisplayLabel, "{umbLink: Link}")]
 	[InlineData("""{{Link[0]["name"]}}""", "{umbLink: Link}")]
 	[InlineData("{{Layout | ncNodeName}}", "{umbContentName: Layout}")]
-	[InlineData("{{ value | umbCmsJoinArray:', ' | ncNodeName }}", "{umbContentName: value}")]
 	public void Built_in_components_are_used_without_Dragonfly_components(string Label, string Expected)
 	{
 		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName, UseDragonflyUfmComponents: false);
@@ -176,6 +175,16 @@ public class BlockLabelUfmConverterTests
 		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName);
 
 		Assert.Equal(BlockLabelConversionStatus.NeedsManualReview, result.Status);
+	}
+
+	[Fact]
+	public void Joined_picker_names_warn_about_udi_lists_without_Dragonfly_components()
+	{
+		var result = BlockLabelUfmConverter.Convert("{{ value | umbCmsJoinArray:', ' | ncNodeName }}", ContentTypeName, UseDragonflyUfmComponents: false);
+
+		Assert.Equal(BlockLabelConversionStatus.NeedsManualReview, result.Status);
+		Assert.Equal("{umbContentName: value}", result.ConvertedLabel);
+		Assert.Contains(result.Warnings, x => x.Contains("udi") && x.Contains("{dufmFirstValue: value}"));
 	}
 
 	[Fact]
