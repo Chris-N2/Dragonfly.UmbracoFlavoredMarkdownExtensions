@@ -36,6 +36,15 @@ export const manifests: Array<UmbExtensionManifest> = [
     },
   },
   {
+    name: "First Block Value UFM Component",
+    alias: "Dragonfly.UfmComponent.FirstBlockValue",
+    type: "ufmComponent",
+    api: () => import("./first-block-value.component.js"),
+    meta: {
+      alias: "dufmFirstBlockValue",
+    },
+  },
+  {
     name: "First Value UFM Component",
     alias: "Dragonfly.UfmComponent.FirstValue",
     type: "ufmComponent",

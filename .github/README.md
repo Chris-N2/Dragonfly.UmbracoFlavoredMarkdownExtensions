@@ -129,6 +129,26 @@ Replaces AngularJS chains of fallbacks, which read more simply this way and, whe
 
 Pickers are recognised by the shape of their value, so a text property holding nothing but a GUID would be treated as a picked item.
 
+### `{dufmFirstBlockValue: BlocksAlias, ValueAlias, OutputType}`
+
+Renders a property of the **first block** in a Block List or Block Grid property. A block's properties are stored as a list of alias/value pairs, which a UFM expression cannot search, so this reads it for you. It is most useful in a List View column's label template, where the column's value is the whole Block List.
+
+- `BlocksAlias` — the property holding the blocks: `value` in a List View column label template.
+- `ValueAlias` — the alias of the property to read from the first block.
+- `OutputType` — optional. `DisplayText` (the default) renders the value by what it holds, as `{dufmFirstValue}` does, and shows a link picker's item name or title (falling back to its URL). `Url` is for link picker properties only, and renders the link's URL.
+
+Examples:
+
+```
+{dufmFirstBlockValue: value, Title}
+
+{dufmFirstBlockValue: value, Link}
+
+{dufmFirstBlockValue: value, Link, Url}
+```
+
+Only the first block is read. If it has no such property, nothing is shown.
+
 ## <a name="ConversionTool"></a>Block Label Evaluation / Conversion Tool
 
 `BlockLabelUfmMigrator` rewrites the AngularJS labels on every Block List and Block Grid datatype in a site, covering both `blocks[].label` and Block Grid area `createLabel`s. 
@@ -195,6 +215,7 @@ proposed UFM, and any warnings, without saving anything.
 | `{{Link[0]["url"]}}`                                                                                      | `{dufmLinkUrl: Link}`                          | left for manual review — no built-in equivalent                  |
 | `{{Link[0]["nodeName"] ? … : …}}`                                                                         | `{dufmLinkDisplay: Link}`                      | `{umbLink: Link}` (title first, then item name; no URL fallback) |
 | `{{Layout \| ncNodeName}}`                                                                                | `{umbContentName: Layout}`                     | same                                                             |
+| `{{value["contentData"][0]["Link"][0]["nodeName"] ? … : …}}`                                              | `{dufmFirstBlockValue: value, Link}`           | left for manual review — no built-in equivalent                  |
 | `{{BlockName ? BlockName : (Body ? (Body \| ncRichText \| truncate:true:100) : (Image \| ncMediaName))}}` | `{dufmFirstValue: BlockName, Body:100, Image}` | left for manual review                                           |
 
 Four of these are behavior fixes rather than translations. UFM's expression parser cannot pass arguments to a piped filter, so `truncate` is called as a function instead; `| truncate:150` would be a parse error inside parentheses and would ignore its length elsewhere. `!!` is a parse error in UFM's expression parser, and an empty value is already false, so it is simply dropped. `$settings.x == 1` never matches in v14+, where settings toggles are real booleans, so the comparison is dropped too. `$index` counts from 0 in UFM, so 1 is added to keep the numbering AngularJS labels showed; inside a larger expression it becomes `($index+1)`.

@@ -19,7 +19,7 @@ const n = [
     name: "Link Display UFM Component",
     alias: "Dragonfly.UfmComponent.LinkDisplay",
     type: "ufmComponent",
-    api: () => import("./link-display.component-BDj3YWks.js"),
+    api: () => import("./link-display.component-C7rS78nI.js"),
     meta: {
       alias: "dufmLinkDisplay"
     }
@@ -28,7 +28,7 @@ const n = [
     name: "Link URL UFM Component",
     alias: "Dragonfly.UfmComponent.LinkUrl",
     type: "ufmComponent",
-    api: () => import("./link-url.component-CX4j120u.js"),
+    api: () => import("./link-url.component-D3waH2tJ.js"),
     meta: {
       alias: "dufmLinkUrl"
     }
@@ -37,16 +37,25 @@ const n = [
     name: "Link URL With Anchor UFM Component",
     alias: "Dragonfly.UfmComponent.LinkUrlWithAnchor",
     type: "ufmComponent",
-    api: () => import("./link-url-with-anchor.component-Bi2LXN3Q.js"),
+    api: () => import("./link-url-with-anchor.component-laj3OxAY.js"),
     meta: {
       alias: "dufmLinkUrlWithAnchor"
+    }
+  },
+  {
+    name: "First Block Value UFM Component",
+    alias: "Dragonfly.UfmComponent.FirstBlockValue",
+    type: "ufmComponent",
+    api: () => import("./first-block-value.component-DeWUY5U3.js"),
+    meta: {
+      alias: "dufmFirstBlockValue"
     }
   },
   {
     name: "First Value UFM Component",
     alias: "Dragonfly.UfmComponent.FirstValue",
     type: "ufmComponent",
-    api: () => import("./first-value.component-39kfqO-c.js"),
+    api: () => import("./first-value.component-DyNMibDa.js"),
     meta: {
       alias: "dufmFirstValue"
     }

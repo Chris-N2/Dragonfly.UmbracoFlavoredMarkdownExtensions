@@ -1,8 +1,7 @@
 import { customElement, property } from "@umbraco-cms/backoffice/external/lit";
 import { UmbUfmComponentBase, UmbUfmElementBase, UMB_UFM_RENDER_CONTEXT } from "@umbraco-cms/backoffice/ufm";
 import type { UfmToken } from "@umbraco-cms/backoffice/ufm";
-import { UMB_DOCUMENT_ENTITY_TYPE, UmbDocumentUrlRepository } from "@umbraco-cms/backoffice/document";
-import { UMB_MEDIA_ENTITY_TYPE, UmbMediaUrlRepository } from "@umbraco-cms/backoffice/media";
+import { UfmLinkUrlResolver } from "./link-url-resolver.js";
 import { parseLinkValues, withQueryString } from "./link-value.function.js";
 import type { UfmLinkValue } from "./link-value.function.js";
 
@@ -19,8 +18,7 @@ export class UfmLinkUrlElement extends UmbUfmElementBase {
   @property({ type: Boolean, attribute: "append-query-string" })
   appendQueryString = false;
 
-  #documentUrlRepository?: UmbDocumentUrlRepository;
-  #mediaUrlRepository?: UmbMediaUrlRepository;
+  #linkUrls = new UfmLinkUrlResolver(this);
 
   constructor() {
     super();
@@ -46,29 +44,9 @@ export class UfmLinkUrlElement extends UmbUfmElementBase {
   }
 
   async #url(link: UfmLinkValue): Promise<string> {
-    const url = (await this.#lookupUrl(link)) || link?.url;
+    const url = await this.#linkUrls.url(link);
 
     return (this.appendQueryString ? withQueryString(link, url) : url) || "";
-  }
-
-  async #lookupUrl(link: UfmLinkValue): Promise<string | undefined> {
-    if (!link?.unique) return undefined;
-
-    if (link.type === UMB_MEDIA_ENTITY_TYPE) {
-      this.#mediaUrlRepository ??= new UmbMediaUrlRepository(this);
-
-      const { data } = await this.#mediaUrlRepository.requestItems([link.unique]).catch(() => ({ data: undefined }));
-      return Array.isArray(data) ? data[0]?.url : undefined;
-    }
-
-    if (link.type === UMB_DOCUMENT_ENTITY_TYPE) {
-      this.#documentUrlRepository ??= new UmbDocumentUrlRepository(this);
-
-      const { data } = await this.#documentUrlRepository.requestUrls([link.unique]).catch(() => ({ data: undefined }));
-      return Array.isArray(data) ? data[0]?.urls?.[0]?.url : undefined;
-    }
-
-    return undefined;
   }
 }
 

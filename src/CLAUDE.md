@@ -153,6 +153,11 @@ Conversion rules worth knowing:
   `{umbContentName: value}`: the render context for a List View column label is `{ value: <column value> }`,
   and `umbContentName` resolves every picked item and joins the names with `", "`. Other separators
   stay manual review.
+- `value["contentData"][0]["X"]` (a List View column over a Block List, reading the first block) becomes
+  `{dufmFirstBlockValue: value, X}`, as does the link name chain
+  `…["X"][0]["nodeName"] ? … : …["X"][0]["name"]`; `…["X"][0]["url"]` becomes `{dufmFirstBlockValue: value, X, Url}`.
+  Block values are stored as `contentData[].values[{alias, value}]` in v14+, which an expression cannot search,
+  hence the component. Only `[0]` is converted, and there is no built-in equivalent.
 - `$contentTypeName` has no built-in UFM equivalent: a standalone one becomes
   `{dufmBlockContentTypeName:}` with `UseDragonflyUfmComponents`; otherwise the element type name is
   written into the label.
@@ -175,6 +180,11 @@ duplicate static web assets fail the build ("Sequence contains more than one ele
 
 The `Client/` folder is excluded from packing; only `Client/public/umbraco-package.json` is
 referenced, and Vite copies it into the output folder during the build.
+
+Umbraco appends the manifest's `version` to the bundle's URL (`?umb__rnd=<version>`) as its cache-buster.
+`UmbracoPackageManifest.targets` therefore ships a copy of `Client/public/umbraco-package.json` with its
+`version` set to the package version, generated under `obj/`, in place of the copy Vite writes into
+`wwwroot`. Without it the version stays `0.0.0` and sites keep a stale bundle after updating.
 
 ### NuGet Package Versioning
 

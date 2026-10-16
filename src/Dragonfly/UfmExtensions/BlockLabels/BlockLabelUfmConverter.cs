@@ -32,6 +32,15 @@ public static class BlockLabelUfmConverter
 		@"^(\w+)\s*\|\s*(?:umbCmsJoinArray\s*:\s*(?:', '|"", "")\s*\|\s*)?nc(?:Node|Media)Name$",
 		RegexOptions.Compiled);
 
+	//A property of the first block in a Block List or Block Grid value, e.g. value["contentData"][0]["Link"]. Group "blocks" is the
+	//property holding the blocks and "alias" the block property; "prefix" repeats the whole path, so a backreference can check it is the same one.
+	private const string FirstBlockValuePath = @"(?<prefix>(?<blocks>\w+)\[""contentData""\]\[0\]\[""(?<alias>\w+)""\])";
+	private static readonly Regex FirstBlockValue = new($"^{FirstBlockValuePath}$", RegexOptions.Compiled);
+	private static readonly Regex FirstBlockLinkDisplay = new(
+		$@"^{FirstBlockValuePath}\[0\]\[""nodeName""\]\s*\?\s*\k<prefix>\[0\]\[""nodeName""\]\s*:\s*\k<prefix>\[0\]\[""name""\]$",
+		RegexOptions.Compiled);
+	private static readonly Regex FirstBlockLinkUrl = new($@"^{FirstBlockValuePath}\[0\]\[""url""\]$", RegexOptions.Compiled);
+
 	//One value in a chain of fallbacks. Group 1 is the property alias, group 2 a truncate length.
 	private static readonly Regex FallbackChainValue = new(
 		@"^(\w+)(?:\s*\|\s*nc(?:RichText|NodeName|MediaName))?(?:\s*\|\s*truncate\s*:\s*(?:true|false)\s*:\s*(\d+))?$",
@@ -53,6 +62,7 @@ public static class BlockLabelUfmConverter
 		new(ArgumentFrom(LinkName), DragonflyAlias: "umbLink", BuiltInAlias: "umbLink"),
 		new(ArgumentFrom(PickerName), DragonflyAlias: "umbContentName", BuiltInAlias: "umbContentName"),
 		new(FallbackChainArgument, DragonflyAlias: "dufmFirstValue", BuiltInAlias: null),
+		new(FirstBlockValueArgument, DragonflyAlias: "dufmFirstBlockValue", BuiltInAlias: null),
 	];
 
 	/// <summary>
@@ -241,6 +251,26 @@ public static class BlockLabelUfmConverter
 			var match = Pattern.Match(Expression);
 			return match.Success ? match.Groups[1].Value : null;
 		};
+	}
+
+	/// <summary>
+	/// Reads a property of the first block in a blocks value into the arguments for dufmFirstBlockValue:
+	/// <c>value["contentData"][0]["Link"]</c> becomes <c>value, Link</c>, a link's name or node name
+	/// <c>value["contentData"][0]["Link"][0]["nodeName"] ? … : …["name"]</c> the same, and a link's URL
+	/// <c>…["Link"][0]["url"]</c> <c>value, Link, Url</c>. Returns null for anything else.
+	/// </summary>
+	private static string? FirstBlockValueArgument(string Expression)
+	{
+		foreach (var (pattern, outputType) in new[] { (FirstBlockValue, ""), (FirstBlockLinkDisplay, ""), (FirstBlockLinkUrl, ", Url") })
+		{
+			var match = pattern.Match(Expression);
+			if (match.Success)
+			{
+				return $"{match.Groups["blocks"].Value}, {match.Groups["alias"].Value}{outputType}";
+			}
+		}
+
+		return null;
 	}
 
 	/// <summary>

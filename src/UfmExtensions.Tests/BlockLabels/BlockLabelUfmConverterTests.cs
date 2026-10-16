@@ -4,6 +4,8 @@ public class BlockLabelUfmConverterTests
 {
 	private const string ContentTypeName = "Rich Text";
 
+	private const string FirstBlockLinkDisplayLabel = """{{ value["contentData"][0]["Link"][0]["nodeName"] ? value["contentData"][0]["Link"][0]["nodeName"]: value["contentData"][0]["Link"][0]["name"]}}""";
+
 	private const string LinkDisplayLabel = """{{Link[0]["nodeName"] ? Link[0]["nodeName"] : (Link[0]["name"] ? Link[0]["name"] : Link[0]["url"])}}""";
 
 	[Theory]
@@ -45,6 +47,9 @@ public class BlockLabelUfmConverterTests
 	[InlineData("{{Layout | ncNodeName}}", "{umbContentName: Layout}")]
 	[InlineData("{{Image | ncMediaName}}", "{umbContentName: Image}")]
 	[InlineData("{{ value | umbCmsJoinArray:', ' |  ncNodeName}}", "{umbContentName: value}")]
+	[InlineData(FirstBlockLinkDisplayLabel, "{dufmFirstBlockValue: value, Link}")]
+	[InlineData("""{{value["contentData"][0]["Link"][0]["url"]}}""", "{dufmFirstBlockValue: value, Link, Url}")]
+	[InlineData("""{{value["contentData"][0]["Title"]}}""", "{dufmFirstBlockValue: value, Title}")]
 	public void Dragonfly_components_are_used_by_default(string Label, string Expected)
 	{
 		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName);
@@ -161,6 +166,24 @@ public class BlockLabelUfmConverterTests
 
 		Assert.Equal(BlockLabelConversionStatus.NeedsManualReview, result.Status);
 		Assert.Contains(result.Warnings, x => x.Contains("umbContentName"));
+	}
+
+	[Theory]
+	[InlineData("""{{value["contentData"][1]["Link"][0]["url"]}}""")]
+	[InlineData("""{{value["contentData"][0]["Link"][0]["nodeName"] ? value["contentData"][0]["Other"][0]["nodeName"] : value["contentData"][0]["Link"][0]["name"]}}""")]
+	public void First_block_value_variations_that_are_not_covered_need_review(string Label)
+	{
+		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName);
+
+		Assert.Equal(BlockLabelConversionStatus.NeedsManualReview, result.Status);
+	}
+
+	[Fact]
+	public void First_block_value_needs_review_without_Dragonfly_components()
+	{
+		var result = BlockLabelUfmConverter.Convert(FirstBlockLinkDisplayLabel, ContentTypeName, UseDragonflyUfmComponents: false);
+
+		Assert.Equal(BlockLabelConversionStatus.NeedsManualReview, result.Status);
 	}
 
 	[Fact]

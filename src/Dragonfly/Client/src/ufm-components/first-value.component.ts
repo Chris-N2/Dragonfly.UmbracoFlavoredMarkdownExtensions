@@ -1,10 +1,8 @@
 import { customElement, property } from "@umbraco-cms/backoffice/external/lit";
 import { UmbUfmComponentBase, UmbUfmElementBase, UMB_UFM_RENDER_CONTEXT } from "@umbraco-cms/backoffice/ufm";
 import type { UfmToken } from "@umbraco-cms/backoffice/ufm";
-import { UmbId } from "@umbraco-cms/backoffice/id";
-import { UMB_MEDIA_ENTITY_TYPE } from "@umbraco-cms/backoffice/media";
+import { describeValue } from "./describe-value.js";
 import { UfmItemNameResolver } from "./item-name-resolver.js";
-import { parseLegacyUdi } from "./link-value.function.js";
 
 type FirstValueEntry = {
   alias: string;
@@ -16,14 +14,8 @@ type FirstValueArguments = {
   fallback: string;
 };
 
-type PickedItem = {
-  type?: string;
-  unique: string;
-};
-
 const entryPattern = /^(\w+)(?:\s*:\s*(\d+))?$/;
 const fallbackPattern = /,\s*(["'])(.*)\1\s*$/;
-const htmlTagPattern = /<\/?[a-z][^>]*>/i;
 
 /**
  * Renders the first of several properties that has a value, the way an AngularJS label's chain of
@@ -62,44 +54,11 @@ export class UfmFirstValueElement extends UmbUfmElementBase {
     if (!values || typeof values !== "object") return fallback;
 
     for (const entry of entries) {
-      const text = await this.#describe((values as Record<string, unknown>)[entry.alias]);
+      const text = await describeValue((values as Record<string, unknown>)[entry.alias], this.#itemNames);
       if (text) return truncate(text, entry.length);
     }
 
     return fallback;
-  }
-
-  async #describe(value: unknown): Promise<string | undefined> {
-    const pickedItems = parsePickedItems(value);
-    if (pickedItems.length) {
-      return this.#itemNames.names(
-        pickedItems[0].type,
-        pickedItems.map((item) => item.unique),
-      );
-    }
-
-    // Rich text arrives as { markup, blocks }; an empty editor still sends the object, with empty markup.
-    if (value && typeof value === "object" && "markup" in value) {
-      return stripHtml(String(value.markup ?? ""));
-    }
-
-    if (typeof value === "string") {
-      return htmlTagPattern.test(value) ? stripHtml(value) : value.trim();
-    }
-
-    // Lists of text, such as tags or a Contentment Data List, show their items comma-separated.
-    if (Array.isArray(value)) {
-      return value
-        .filter((item): item is string => typeof item === "string" && item.trim() !== "")
-        .join(", ");
-    }
-
-    // Zero was falsy in the AngularJS fallbacks, so it is skipped here too.
-    if (typeof value === "number" && value !== 0) {
-      return String(value);
-    }
-
-    return undefined;
   }
 }
 
@@ -116,41 +75,6 @@ function parseArguments(aliases?: string): FirstValueArguments {
     .map(([, alias, length]) => ({ alias, length: length ? Number(length) : undefined }));
 
   return { entries, fallback: fallback?.[2] ?? "" };
-}
-
-/**
- * Reads a content, media or multinode tree picker value into the items it picks. Anything else
- * returns no items, so it is rendered as text instead.
- */
-function parsePickedItems(value: unknown): Array<PickedItem> {
-  const items = typeof value === "string" ? value.split(",") : Array.isArray(value) ? value : [];
-
-  const pickedItems = items.map(toPickedItem);
-
-  return pickedItems.length && pickedItems.every((item) => item) ? (pickedItems as Array<PickedItem>) : [];
-}
-
-function toPickedItem(item: unknown): PickedItem | undefined {
-  if (typeof item === "string") {
-    const key = item.trim();
-    return UmbId.validate(key) ? { unique: key } : parseLegacyUdi(key);
-  }
-
-  if (!item || typeof item !== "object") return undefined;
-
-  // Media Picker values hold the picked media's key in mediaKey; other pickers use unique and type.
-  const { mediaKey, unique, type } = item as { mediaKey?: string; unique?: string; type?: string };
-
-  if (mediaKey) return { type: UMB_MEDIA_ENTITY_TYPE, unique: mediaKey };
-  if (unique) return { type, unique };
-
-  return undefined;
-}
-
-function stripHtml(markup: string): string {
-  const document = new DOMParser().parseFromString(markup, "text/html");
-
-  return (document.body.textContent ?? "").trim();
 }
 
 function truncate(text: string, length?: number): string {

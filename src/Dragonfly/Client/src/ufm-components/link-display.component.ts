@@ -2,8 +2,8 @@ import { customElement, property } from "@umbraco-cms/backoffice/external/lit";
 import { UmbUfmComponentBase, UmbUfmElementBase, UMB_UFM_RENDER_CONTEXT } from "@umbraco-cms/backoffice/ufm";
 import type { UfmToken } from "@umbraco-cms/backoffice/ufm";
 import { UfmItemNameResolver } from "./item-name-resolver.js";
-import { parseLinkValues, withQueryString } from "./link-value.function.js";
-import type { UfmLinkValue } from "./link-value.function.js";
+import { describeLink } from "./describe-value.js";
+import { parseLinkValues } from "./link-value.function.js";
 
 /**
  * Describes a link picker value the way AngularJS labels did: the linked item's name when one is
@@ -30,23 +30,13 @@ export class UfmLinkDisplayElement extends UmbUfmElementBase {
             return;
           }
 
-          const labels = await Promise.all(links.map((link) => this.#describe(link)));
+          const labels = await Promise.all(links.map((link) => describeLink(link, this.#itemNames)));
 
           this.value = labels.filter((label) => label).join(", ");
         },
         "observeValue",
       );
     });
-  }
-
-  async #describe(link: UfmLinkValue): Promise<string> {
-    return (await this.#itemName(link)) || link?.name || withQueryString(link, link?.url) || "";
-  }
-
-  async #itemName(link: UfmLinkValue): Promise<string | undefined> {
-    if (!link?.unique) return undefined;
-
-    return this.#itemNames.names(link.type, [link.unique]);
   }
 }
 
