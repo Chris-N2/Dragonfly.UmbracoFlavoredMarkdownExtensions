@@ -44,6 +44,7 @@ public class BlockLabelUfmConverterTests
 	[InlineData("""{{Link[0]["name"]}}""", "{umbLink: Link}")]
 	[InlineData("{{Layout | ncNodeName}}", "{umbContentName: Layout}")]
 	[InlineData("{{Image | ncMediaName}}", "{umbContentName: Image}")]
+	[InlineData("{{ value | umbCmsJoinArray:', ' |  ncNodeName}}", "{umbContentName: value}")]
 	public void Dragonfly_components_are_used_by_default(string Label, string Expected)
 	{
 		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName);
@@ -57,6 +58,7 @@ public class BlockLabelUfmConverterTests
 	[InlineData(LinkDisplayLabel, "{umbLink: Link}")]
 	[InlineData("""{{Link[0]["name"]}}""", "{umbLink: Link}")]
 	[InlineData("{{Layout | ncNodeName}}", "{umbContentName: Layout}")]
+	[InlineData("{{ value | umbCmsJoinArray:', ' | ncNodeName }}", "{umbContentName: value}")]
 	public void Built_in_components_are_used_without_Dragonfly_components(string Label, string Expected)
 	{
 		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName, UseDragonflyUfmComponents: false);
@@ -152,6 +154,7 @@ public class BlockLabelUfmConverterTests
 	[Theory]
 	[InlineData("{{BlockName ? Title : (ResourceNode | ncNodeName)}}")]
 	[InlineData("{{BlockName ? BlockName : 'Untitled' + (ResourceNode | ncNodeName)}}")]
+	[InlineData("{{ value | umbCmsJoinArray:' / ' | ncNodeName }}")]
 	public void Picked_name_inside_another_expression_needs_review(string Label)
 	{
 		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName);

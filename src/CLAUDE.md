@@ -149,6 +149,10 @@ Conversion rules worth knowing:
   (`… : 'None'`) passes it on as the fallback text (`…, "None"`), and a trailing `''` is dropped.
   Without `UseDragonflyUfmComponents` a chain stays an expression, except one holding a picked
   item's name, which has no built-in equivalent and needs manual review.
+- `value | umbCmsJoinArray:', ' | ncNodeName` (a List View column showing several picked items) becomes
+  `{umbContentName: value}`: the render context for a List View column label is `{ value: <column value> }`,
+  and `umbContentName` resolves every picked item and joins the names with `", "`. Other separators
+  stay manual review.
 - `$contentTypeName` has no built-in UFM equivalent: a standalone one becomes
   `{dufmBlockContentTypeName:}` with `UseDragonflyUfmComponents`; otherwise the element type name is
   written into the label.

@@ -27,7 +27,10 @@ public static class BlockLabelUfmConverter
 	private static readonly Regex LinkDisplay = new(
 		@"^(\w+)\[0\]\[""nodeName""\]\s*\?\s*\1\[0\]\[""nodeName""\]\s*:\s*\(?\s*\1\[0\]\[""name""\]\s*\?\s*\1\[0\]\[""name""\]\s*:\s*\1\[0\]\[""url""\]\s*\)?$",
 		RegexOptions.Compiled);
-	private static readonly Regex PickerName = new(@"^(\w+)\s*\|\s*nc(?:Node|Media)Name$", RegexOptions.Compiled);
+	//umbContentName already joins the names of several picked items with ", ", so a ", " join before the name filter is covered by it.
+	private static readonly Regex PickerName = new(
+		@"^(\w+)\s*\|\s*(?:umbCmsJoinArray\s*:\s*(?:', '|"", "")\s*\|\s*)?nc(?:Node|Media)Name$",
+		RegexOptions.Compiled);
 
 	//One value in a chain of fallbacks. Group 1 is the property alias, group 2 a truncate length.
 	private static readonly Regex FallbackChainValue = new(
