@@ -34,6 +34,10 @@ public static class BlockLabelUfmConverter
 	private static readonly Regex StandaloneContentTypeName = new(@"^\$contentTypeName$", RegexOptions.Compiled);
 	private static readonly Regex LinkName = new(@"^(\w+)\[0\]\[""name""\]$", RegexOptions.Compiled);
 	private static readonly Regex LinkUrl = new(@"^(\w+)\[0\]\[""url""\]$", RegexOptions.Compiled);
+	//The link's title, else the picked item's name, which is what umbLink shows. The test may read the title's length.
+	private static readonly Regex LinkTitleOrItemName = new(
+		@"^(\w+)\[0\]\[""name""\](?:\[""length""\]\s*>\s*0)?\s*\?\s*\1\[0\]\[""name""\]\s*:\s*\1\[0\]\[""nodeName""\]$",
+		RegexOptions.Compiled);
 	private static readonly Regex LinkDisplay = new(
 		@"^(\w+)\[0\]\[""nodeName""\]\s*\?\s*\1\[0\]\[""nodeName""\]\s*:\s*\(?\s*\1\[0\]\[""name""\]\s*\?\s*\1\[0\]\[""name""\]\s*:\s*\1\[0\]\[""url""\]\s*\)?$",
 		RegexOptions.Compiled);
@@ -57,7 +61,12 @@ public static class BlockLabelUfmConverter
 		RegexOptions.Compiled);
 	//Text a chain of fallbacks ends in. Group 2 is the text, which cannot hold quotes or braces, since it becomes a quoted component argument.
 	private static readonly Regex FallbackChainText = new(@"^(['""])([^'""{}]*)\1$", RegexOptions.Compiled);
-	private static readonly Regex FallbackChainCondition = new(@"^(?:!!)?(\w+)$", RegexOptions.Compiled);
+	//A step's test: a ? …, !!a ? …, or a.length > 0 ? …, which is the same test for text.
+	private static readonly Regex FallbackChainCondition = new(@"^(?:!!)?(\w+)(?:\.length(?:\s*>\s*0)?)?$", RegexOptions.Compiled);
+
+	//Property reads that AngularJS accepted in several forms: x[0].name and x[0]['name'] both mean x[0]["name"].
+	private static readonly Regex DotPropertyRead = new(@"\]\s*\.\s*(\w+)", RegexOptions.Compiled);
+	private static readonly Regex SingleQuotedPropertyRead = new(@"\[\s*'(\w+)'\s*\]", RegexOptions.Compiled);
 
 	/// <summary>
 	/// The filters UFM expressions support. Any other piped filter, such as AngularJS's date, currency or number,
@@ -74,6 +83,7 @@ public static class BlockLabelUfmConverter
 	private static readonly ComponentSubstitution[] ComponentSubstitutions =
 	[
 		new(ArgumentFrom(StandaloneContentTypeName), DragonflyAlias: "dufmBlockContentTypeName", BuiltInAlias: null),
+		new(ArgumentFrom(LinkTitleOrItemName), DragonflyAlias: "umbLink", BuiltInAlias: "umbLink"),
 		new(ArgumentFrom(LinkDisplay), DragonflyAlias: "dufmLinkDisplay", BuiltInAlias: "umbLink"),
 		new(ArgumentFrom(LinkUrl), DragonflyAlias: "dufmLinkUrl", BuiltInAlias: null),
 		new(ArgumentFrom(LinkName), DragonflyAlias: "umbLink", BuiltInAlias: "umbLink"),
@@ -289,9 +299,11 @@ public static class BlockLabelUfmConverter
 	/// </summary>
 	private static string? ComponentFor(string Expression, bool UseDragonflyUfmComponents)
 	{
+		var expression = WithBracketPropertyReads(Expression);
+
 		foreach (var substitution in ComponentSubstitutions)
 		{
-			var argument = substitution.MatchArgument(Expression);
+			var argument = substitution.MatchArgument(expression);
 			if (argument is null)
 			{
 				continue;
@@ -303,6 +315,27 @@ public static class BlockLabelUfmConverter
 		}
 
 		return null;
+	}
+
+	/// <summary>
+	/// Rewrites the property reads that follow an index in the bracket form the component patterns expect:
+	/// <c>Link[0].name</c> and <c>Link[0]['name']</c> become <c>Link[0]["name"]</c>. Used only to find a component,
+	/// so an expression that stays an expression keeps its original form.
+	/// </summary>
+	private static string WithBracketPropertyReads(string Expression)
+	{
+		var expression = SingleQuotedPropertyRead.Replace(Expression, @"[""$1""]");
+
+		//Each rewrite can expose the next read in a chain, e.g. Link[0].name.length.
+		string previous;
+		do
+		{
+			previous = expression;
+			expression = DotPropertyRead.Replace(expression, @"][""$1""]");
+		}
+		while (expression != previous);
+
+		return expression;
 	}
 
 	//Matches an expression against a pattern, giving group 1 (or an empty argument) when it matches.

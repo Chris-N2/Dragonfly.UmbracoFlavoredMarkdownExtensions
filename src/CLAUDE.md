@@ -173,6 +173,12 @@ Conversion rules worth knowing:
   `…["X"][0]["nodeName"] ? … : …["X"][0]["name"]`; `…["X"][0]["url"]` becomes `{dufmFirstBlockValue: value, X, Url}`.
   Block values are stored as `contentData[].values[{alias, value}]` in v14+, which an expression cannot search,
   hence the component. Only `[0]` is converted, and there is no built-in equivalent.
+- AngularJS read a picked link's properties in several forms; `Link[0].name` and `Link[0]['name']` are
+  matched as `Link[0]["name"]`, so every link pattern accepts all three. The rewrite is only used to find a
+  component, so a label that stays an expression keeps its original form.
+- `Link[0].name ? Link[0].name : Link[0].nodeName` (optionally testing `Link[0].name.length > 0`) becomes
+  `{umbLink: Link}` in both modes: umbLink shows the link's title, else the picked item's name.
+- A fallback chain step may test `a.length > 0` or `a.length` instead of `a`, which is the same test for text.
 - `$contentTypeName` has no built-in UFM equivalent: a standalone one becomes
   `{dufmBlockContentTypeName:}` with `UseDragonflyUfmComponents`; otherwise the element type name is
   written into the label.

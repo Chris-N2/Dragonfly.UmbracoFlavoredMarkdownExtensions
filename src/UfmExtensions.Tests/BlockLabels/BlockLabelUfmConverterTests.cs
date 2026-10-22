@@ -57,6 +57,12 @@ public class BlockLabelUfmConverterTests
 	[InlineData(FirstBlockLinkDisplayLabel, "{dufmFirstBlockValue: value, Link}")]
 	[InlineData("""{{value["contentData"][0]["Link"][0]["url"]}}""", "{dufmFirstBlockValue: value, Link, Url}")]
 	[InlineData("""{{value["contentData"][0]["Title"]}}""", "{dufmFirstBlockValue: value, Title}")]
+	[InlineData("{{Link[0].url}}", "{dufmLinkUrl: Link}")]
+	[InlineData("{{Link[0]['url']}}", "{dufmLinkUrl: Link}")]
+	[InlineData("{{ Link[0] . name }}", "{umbLink: Link}")]
+	[InlineData("{{Link[0].nodeName ? Link[0].nodeName : (Link[0].name ? Link[0].name : Link[0].url)}}", "{dufmLinkDisplay: Link}")]
+	[InlineData("{{ page[0].name.length > 0 ? page[0].name : page[0].nodeName }}", "{umbLink: page}")]
+	[InlineData("""{{page[0]["name"] ? page[0]["name"] : page[0]["nodeName"]}}""", "{umbLink: page}")]
 	public void Dragonfly_components_are_used_by_default(string Label, string Expected)
 	{
 		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName);
@@ -70,6 +76,8 @@ public class BlockLabelUfmConverterTests
 	[InlineData(LinkDisplayLabel, "{umbLink: Link}")]
 	[InlineData("""{{Link[0]["name"]}}""", "{umbLink: Link}")]
 	[InlineData("{{Layout | ncNodeName}}", "{umbContentName: Layout}")]
+	[InlineData("{{Link[0].name}}", "{umbLink: Link}")]
+	[InlineData("{{ page[0].name.length > 0 ? page[0].name : page[0].nodeName }}", "{umbLink: page}")]
 	public void Built_in_components_are_used_without_Dragonfly_components(string Label, string Expected)
 	{
 		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName, UseDragonflyUfmComponents: false);
@@ -133,6 +141,8 @@ public class BlockLabelUfmConverterTests
 	[InlineData("""{{Layout? Layout : "[No Layout Selected]"}}""", """{dufmFirstValue: Layout, "[No Layout Selected]"}""")]
 	[InlineData("{{Title ? Title : 'Untitled'}}", """{dufmFirstValue: Title, "Untitled"}""")]
 	[InlineData("{{Title ? Title : (Body | limitTo:50)}}", "{dufmFirstValue: Title, Body:50}")]
+	[InlineData("{{title.length > 0 ? title : subtitle}}", "{dufmFirstValue: title, subtitle}")]
+	[InlineData("{{title.length ? title : 'Untitled'}}", """{dufmFirstValue: title, "Untitled"}""")]
 	[InlineData("{{!!caption ? caption : videoUrl | limitTo:100}}", "{dufmFirstValue: caption:100, videoUrl:100}")]
 	[InlineData("{{(Title ? Title : Body) | truncate:true:100}}", "{dufmFirstValue: Title:100, Body:100}")]
 	[InlineData("{{Title ? Title : (Body | ncRichText | truncate:true:20) | limitTo:100}}", "{dufmFirstValue: Title:100, Body:20}")]
