@@ -30,6 +30,13 @@ public class BlockLabelUfmConverterTests
 	[InlineData("{{Body | ncRichText | truncate:true:150}}", "${ truncate(Body | stripHtml, 150) }")]
 	[InlineData("{{Title | truncate:true:20}}", "${ truncate(Title, 20) }")]
 	[InlineData("{{'(' + Title | truncate:true:20}}", "${ truncate('(' + Title, 20) }")]
+	[InlineData("{{Title | truncate:true:20:'...'}}", "${ truncate(Title, 20, '...') }")]
+	[InlineData("{{Title | limitTo:20}}", "${ truncate(Title, 20, '') }")]
+	[InlineData("{{Body | ncRichText | limitTo:50}}", "${ truncate(Body | stripHtml, 50, '') }")]
+	[InlineData("{{'Intro: ' + (Body | limitTo:50)}}", "${ 'Intro: ' + (truncate(Body, 50, '')) }")]
+	[InlineData("{{Title | uppercase}}", "${ Title | uppercase }")]
+	[InlineData("{{Title || 'Untitled'}}", "${ Title || 'Untitled' }")]
+	[InlineData("{{'a | b' + Title}}", "${ 'a | b' + Title }")]
 	[InlineData("{{'Literal text'}}", "Literal text")]
 	public void Expressions_convert_to_ufm_expressions(string Label, string Expected)
 	{
@@ -125,6 +132,10 @@ public class BlockLabelUfmConverterTests
 	[InlineData("{{!!Name ? Name : Other}}", "{dufmFirstValue: Name, Other}")]
 	[InlineData("""{{Layout? Layout : "[No Layout Selected]"}}""", """{dufmFirstValue: Layout, "[No Layout Selected]"}""")]
 	[InlineData("{{Title ? Title : 'Untitled'}}", """{dufmFirstValue: Title, "Untitled"}""")]
+	[InlineData("{{Title ? Title : (Body | limitTo:50)}}", "{dufmFirstValue: Title, Body:50}")]
+	[InlineData("{{!!caption ? caption : videoUrl | limitTo:100}}", "{dufmFirstValue: caption:100, videoUrl:100}")]
+	[InlineData("{{(Title ? Title : Body) | truncate:true:100}}", "{dufmFirstValue: Title:100, Body:100}")]
+	[InlineData("{{Title ? Title : (Body | ncRichText | truncate:true:20) | limitTo:100}}", "{dufmFirstValue: Title:100, Body:20}")]
 	public void Fallback_chain_becomes_first_value(string Label, string Expected)
 	{
 		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName);
@@ -136,6 +147,7 @@ public class BlockLabelUfmConverterTests
 	[Theory]
 	[InlineData("{{Header ? Header : (Body | ncRichText | truncate:true:100)}}", "${ Header ? Header : (truncate(Body | stripHtml, 100)) }")]
 	[InlineData("""{{Layout? Layout : "[No Layout Selected]"}}""", """${ Layout? Layout : "[No Layout Selected]" }""")]
+	[InlineData("{{!!caption ? caption : videoUrl | limitTo:100}}", "${ truncate(caption ? caption : videoUrl, 100, '') }")]
 	public void Fallback_chain_stays_an_expression_without_Dragonfly_components(string Label, string Expected)
 	{
 		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName, UseDragonflyUfmComponents: false);
@@ -175,6 +187,31 @@ public class BlockLabelUfmConverterTests
 		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName);
 
 		Assert.Equal(BlockLabelConversionStatus.NeedsManualReview, result.Status);
+	}
+
+	[Theory]
+	[InlineData("{{Date | date:'dd MMM yyyy'}}", "'| date'")]
+	[InlineData("{{Price | currency}}", "'| currency'")]
+	[InlineData("{{Count | number:2}}", "'| number'")]
+	[InlineData("{{Title | umbCmsTitleCase}}", "'| umbCmsTitleCase'")]
+	[InlineData("{{Title | limitTo:-20}}", "'| limitTo'")]
+	[InlineData("{{Title | limitTo:20:5}}", "'| limitTo'")]
+	[InlineData("{{'On ' + (Date | date:'d MMM')}}", "'| date'")]
+	public void Filter_UFM_does_not_have_needs_review(string Label, string Filter)
+	{
+		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName);
+
+		Assert.Equal(BlockLabelConversionStatus.NeedsManualReview, result.Status);
+		Assert.Contains(result.Warnings, x => x.StartsWith(Filter) && x.Contains("not a UFM filter"));
+	}
+
+	[Fact]
+	public void Piped_filter_with_an_argument_needs_review()
+	{
+		var result = BlockLabelUfmConverter.Convert("{{Title | truncate:20}}", ContentTypeName);
+
+		Assert.Equal(BlockLabelConversionStatus.NeedsManualReview, result.Status);
+		Assert.Contains(result.Warnings, x => x.Contains("passes an argument to a piped filter"));
 	}
 
 	[Fact]

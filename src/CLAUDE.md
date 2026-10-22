@@ -143,10 +143,20 @@ Conversion rules worth knowing:
 - `| ncRichText` → `| stripHtml`; `value | truncate:true:N` → `truncate(value, N)`, where the value is
   everything before the filter within the same parentheses. The UFM expression parser
   (`heximal-expressions`) cannot pass arguments to a piped filter: `| truncate:N` is a parse error
-  inside parentheses and silently ignores its length elsewhere.
+  inside parentheses and silently ignores its length elsewhere. A tail (`truncate:true:N:'…'`) is
+  passed on as `truncate(value, N, '…')`.
+- `value | limitTo:N` → `truncate(value, N, '')`: `limitTo` cut text without an ellipsis, and UFM's
+  `truncate` adds one unless its tail is `''`. A negative `limitTo` or one with a start index is left
+  for manual review.
+- Any other piped filter UFM does not have (`date`, `currency`, `number`, `umbCmsTitleCase`, …), or a UFM
+  filter still passed an argument (`| truncate:20`), is reported as `NeedsManualReview`, since the label
+  would not render. `UfmFilterAliases` in `BlockLabelUfmConverter` lists UFM's filters.
 - A chain of fallbacks (`a ? a : (b ? (b | ncRichText | truncate:true:N) : (c | ncMediaName))`)
   becomes `{dufmFirstValue: a, b:N, c}` with `UseDragonflyUfmComponents`; a chain ending in text
   (`… : 'None'`) passes it on as the fallback text (`…, "None"`), and a trailing `''` is dropped.
+  A `limitTo` or `truncate` after the whole chain (`a ? a : b | limitTo:100`) applies to every value,
+  as AngularJS filters apply to everything before them: `{dufmFirstValue: a:100, b:100}`.
+  `dufmFirstValue` ends a shortened value with `…`, which `limitTo` did not.
   Without `UseDragonflyUfmComponents` a chain stays an expression, except one holding a picked
   item's name, which has no built-in equivalent and needs manual review.
 - `value | umbCmsJoinArray:', ' | ncNodeName` (a List View column showing several picked items) becomes
