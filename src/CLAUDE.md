@@ -159,6 +159,10 @@ Conversion rules worth knowing:
   `dufmFirstValue` ends a shortened value with `…`, which `limitTo` did not.
   Without `UseDragonflyUfmComponents` a chain stays an expression, except one holding a picked
   item's name, which has no built-in equivalent and needs manual review.
+- `x | ncNodeName` and `x | ncMediaName` become `{dufmFirstValue: x}` with `UseDragonflyUfmComponents`, and
+  `{umbContentName: x}` without. Both show the names of Content, Multinode Tree and Media Picker values as v17
+  stores them (a GUID, `{type, unique}` objects, `{mediaKey}` objects), but `umbContentName` lists several items in
+  its own order rather than the order they were picked, as `ncNodeName` did, and shows nothing for a udi string.
 - `value | umbCmsJoinArray:', ' | ncNodeName` (a List View column showing several picked items) becomes
   `{dufmFirstValue: value}` with `UseDragonflyUfmComponents`: the render context for a List View column
   label is `{ value: <column value> }`, and `dufmFirstValue` resolves every picked item and joins the names

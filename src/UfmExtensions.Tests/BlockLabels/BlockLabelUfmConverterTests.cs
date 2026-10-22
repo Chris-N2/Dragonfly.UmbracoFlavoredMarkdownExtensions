@@ -51,8 +51,9 @@ public class BlockLabelUfmConverterTests
 	[InlineData(LinkDisplayLabel, "{dufmLinkDisplay: Link}")]
 	[InlineData("""{{Link[0]["url"]}}""", "{dufmLinkUrl: Link}")]
 	[InlineData("""{{Link[0]["name"]}}""", "{umbLink: Link}")]
-	[InlineData("{{Layout | ncNodeName}}", "{umbContentName: Layout}")]
-	[InlineData("{{Image | ncMediaName}}", "{umbContentName: Image}")]
+	[InlineData("{{Layout | ncNodeName}}", "{dufmFirstValue: Layout}")]
+	[InlineData("{{Image | ncMediaName}}", "{dufmFirstValue: Image}")]
+	[InlineData("{{ value | ncNodeName }}", "{dufmFirstValue: value}")]
 	[InlineData("{{ value | umbCmsJoinArray:', ' |  ncNodeName}}", "{dufmFirstValue: value}")]
 	[InlineData(FirstBlockLinkDisplayLabel, "{dufmFirstBlockValue: value, Link}")]
 	[InlineData("""{{value["contentData"][0]["Link"][0]["url"]}}""", "{dufmFirstBlockValue: value, Link, Url}")]
@@ -76,6 +77,7 @@ public class BlockLabelUfmConverterTests
 	[InlineData(LinkDisplayLabel, "{umbLink: Link}")]
 	[InlineData("""{{Link[0]["name"]}}""", "{umbLink: Link}")]
 	[InlineData("{{Layout | ncNodeName}}", "{umbContentName: Layout}")]
+	[InlineData("{{Image | ncMediaName}}", "{umbContentName: Image}")]
 	[InlineData("{{Link[0].name}}", "{umbLink: Link}")]
 	[InlineData("{{ page[0].name.length > 0 ? page[0].name : page[0].nodeName }}", "{umbLink: page}")]
 	public void Built_in_components_are_used_without_Dragonfly_components(string Label, string Expected)
@@ -189,7 +191,7 @@ public class BlockLabelUfmConverterTests
 		var result = BlockLabelUfmConverter.Convert(Label, ContentTypeName);
 
 		Assert.Equal(BlockLabelConversionStatus.NeedsManualReview, result.Status);
-		Assert.Contains(result.Warnings, x => x.Contains("umbContentName"));
+		Assert.Contains(result.Warnings, x => x.Contains("{dufmFirstValue: alias}"));
 	}
 
 	[Theory]

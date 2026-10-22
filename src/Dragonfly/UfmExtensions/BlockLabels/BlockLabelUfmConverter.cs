@@ -91,7 +91,9 @@ public static class BlockLabelUfmConverter
 		new(ArgumentFrom(LinkDisplay), DragonflyAlias: "dufmLinkDisplay", BuiltInAlias: "umbLink"),
 		new(ArgumentFrom(LinkUrl), DragonflyAlias: "dufmLinkUrl", BuiltInAlias: null),
 		new(ArgumentFrom(LinkName), DragonflyAlias: "umbLink", BuiltInAlias: "umbLink"),
-		new(ArgumentFrom(PickerName), DragonflyAlias: "umbContentName", BuiltInAlias: "umbContentName"),
+		//umbContentName ignores udi strings and lists picked items in its own order, not the order they were picked as ncNodeName
+		//did; dufmFirstValue reads udi strings and keeps the picked order.
+		new(ArgumentFrom(PickerName), DragonflyAlias: "dufmFirstValue", BuiltInAlias: "umbContentName"),
 		//A list of picked items, such as a Contentment Data List, holds udi strings that umbContentName ignores; dufmFirstValue reads them.
 		new(ArgumentFrom(JoinedPickerNames), DragonflyAlias: "dufmFirstValue", BuiltInAlias: "umbContentName"),
 		new(FallbackChainArgument, DragonflyAlias: "dufmFirstValue", BuiltInAlias: null),
@@ -164,7 +166,7 @@ public static class BlockLabelUfmConverter
 		if (expression.Contains("ncNodeName") || expression.Contains("ncMediaName"))
 		{
 			Conversion.Warnings.Add(UseDragonflyUfmComponents
-				? $"'{expression}' resolves a picked item's name: use {{umbContentName: alias}}, or {{dufmFirstValue: alias, alias}} for a chain of fallbacks."
+				? $"'{expression}' resolves a picked item's name: use {{dufmFirstValue: alias}}, or {{dufmFirstValue: alias, alias}} for a chain of fallbacks."
 				: $"'{expression}' resolves a picked item's name: use {{umbContentName: alias}}.");
 		}
 
