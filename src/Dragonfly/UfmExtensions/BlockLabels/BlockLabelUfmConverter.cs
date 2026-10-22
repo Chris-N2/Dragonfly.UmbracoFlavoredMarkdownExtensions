@@ -55,14 +55,18 @@ public static class BlockLabelUfmConverter
 		RegexOptions.Compiled);
 	private static readonly Regex FirstBlockLinkUrl = new($@"^{FirstBlockValuePath}\[0\]\[""url""\]$", RegexOptions.Compiled);
 
-	//One value in a chain of fallbacks. Group 1 is the property alias, group "length" a truncate or limitTo length.
+	//One value in a chain of fallbacks. Group 1 is the property alias, group "linkName" a read of the first link's title,
+	//and group "length" a truncate or limitTo length.
 	private static readonly Regex FallbackChainValue = new(
-		@"^(\w+)(?:\s*\|\s*nc(?:RichText|NodeName|MediaName))?(?:\s*\|\s*(?:truncate\s*:\s*(?:true|false)\s*:\s*(?<length>\d+)|limitTo\s*:\s*(?<length>\d+)))?$",
+		@"^(\w+)(?<linkName>\[0\]\[""name""\])?(?:\s*\|\s*nc(?:RichText|NodeName|MediaName))?(?:\s*\|\s*(?:truncate\s*:\s*(?:true|false)\s*:\s*(?<length>\d+)|limitTo\s*:\s*(?<length>\d+)))?$",
 		RegexOptions.Compiled);
 	//Text a chain of fallbacks ends in. Group 2 is the text, which cannot hold quotes or braces, since it becomes a quoted component argument.
 	private static readonly Regex FallbackChainText = new(@"^(['""])([^'""{}]*)\1$", RegexOptions.Compiled);
-	//A step's test: a ? …, !!a ? …, or a.length > 0 ? …, which is the same test for text.
-	private static readonly Regex FallbackChainCondition = new(@"^(?:!!)?(\w+)(?:\.length(?:\s*>\s*0)?)?$", RegexOptions.Compiled);
+	//A step's test: a ? …, !!a ? …, or a.length > 0 ? …, which is the same test for text. The property may be a link's title,
+	//a[0]["name"], whose length reads as a[0]["name"]["length"] once its property reads are in bracket form.
+	private static readonly Regex FallbackChainCondition = new(
+		@"^(?:!!)?(\w+)(?<linkName>\[0\]\[""name""\])?(?:(?:\.length|\[""length""\])(?:\s*>\s*0)?)?$",
+		RegexOptions.Compiled);
 
 	//Property reads that AngularJS accepted in several forms: x[0].name and x[0]['name'] both mean x[0]["name"].
 	private static readonly Regex DotPropertyRead = new(@"\]\s*\.\s*(\w+)", RegexOptions.Compiled);
@@ -406,7 +410,7 @@ public static class BlockLabelUfmConverter
 			//Each step must test a property and then show that same property: a ? a : …
 			var condition = FallbackChainCondition.Match(remaining.Substring(0, questionMark).Trim());
 			var value = FallbackChainEntry.Parse(remaining.Substring(questionMark + 1, colon - questionMark - 1));
-			if (!condition.Success || value is null || value.Alias != condition.Groups[1].Value)
+			if (!condition.Success || value is null || value.Alias != condition.Groups[1].Value || value.LinkName != condition.Groups["linkName"].Success)
 			{
 				return null;
 			}
@@ -522,8 +526,9 @@ public static class BlockLabelUfmConverter
 	/// <param name="MatchArgument">Gives the component's argument when the expression matches, otherwise null.</param>
 	private sealed record ComponentSubstitution(Func<string, string?> MatchArgument, string DragonflyAlias, string? BuiltInAlias);
 
-	//One property in a chain of fallbacks, written the way dufmFirstValue reads it: alias, or alias:length.
-	private sealed record FallbackChainEntry(string Alias, int? Length)
+	//One property in a chain of fallbacks, written the way dufmFirstValue reads it: alias, alias.name for a link's title,
+	//and either followed by :length.
+	private sealed record FallbackChainEntry(string Alias, bool LinkName, int? Length)
 	{
 		public static FallbackChainEntry? Parse(string Expression)
 		{
@@ -533,7 +538,10 @@ public static class BlockLabelUfmConverter
 				return null;
 			}
 
-			return new FallbackChainEntry(match.Groups[1].Value, match.Groups["length"].Success ? int.Parse(match.Groups["length"].Value) : null);
+			return new FallbackChainEntry(
+				match.Groups[1].Value,
+				match.Groups["linkName"].Success,
+				match.Groups["length"].Success ? int.Parse(match.Groups["length"].Value) : null);
 		}
 
 		//A length applying to the whole chain shortens this value too, keeping the shorter of the two.
@@ -544,7 +552,9 @@ public static class BlockLabelUfmConverter
 
 		public override string ToString()
 		{
-			return Length is null ? Alias : $"{Alias}:{Length}";
+			var entry = LinkName ? $"{Alias}.name" : Alias;
+
+			return Length is null ? entry : $"{entry}:{Length}";
 		}
 	}
 }

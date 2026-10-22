@@ -179,6 +179,9 @@ Conversion rules worth knowing:
 - `Link[0].name ? Link[0].name : Link[0].nodeName` (optionally testing `Link[0].name.length > 0`) becomes
   `{umbLink: Link}` in both modes: umbLink shows the link's title, else the picked item's name.
 - A fallback chain step may test `a.length > 0` or `a.length` instead of `a`, which is the same test for text.
+- A link's title in a fallback chain (`title ? title : Link[0].name`) becomes a `Link.name` entry:
+  `{dufmFirstValue: title, Link.name}`. `dufmFirstValue` reads a plain `Link` entry the way `dufmLinkDisplay`
+  does, picked item's name first, so `.name` is what keeps a custom link title such as "Read more".
 - `$contentTypeName` has no built-in UFM equivalent: a standalone one becomes
   `{dufmBlockContentTypeName:}` with `UseDragonflyUfmComponents`; otherwise the element type name is
   written into the label.

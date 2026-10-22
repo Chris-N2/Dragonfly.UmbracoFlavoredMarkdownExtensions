@@ -143,6 +143,9 @@ public class BlockLabelUfmConverterTests
 	[InlineData("{{Title ? Title : (Body | limitTo:50)}}", "{dufmFirstValue: Title, Body:50}")]
 	[InlineData("{{title.length > 0 ? title : subtitle}}", "{dufmFirstValue: title, subtitle}")]
 	[InlineData("{{title.length ? title : 'Untitled'}}", """{dufmFirstValue: title, "Untitled"}""")]
+	[InlineData("{{ title.length > 0 ? title : primaryLink[0].name }}", "{dufmFirstValue: title, primaryLink.name}")]
+	[InlineData("""{{Link[0]["name"] ? Link[0]["name"] : Title | limitTo:20}}""", "{dufmFirstValue: Link.name:20, Title:20}")]
+	[InlineData("{{Link[0].name.length > 0 ? Link[0].name : 'No link'}}", """{dufmFirstValue: Link.name, "No link"}""")]
 	[InlineData("{{!!caption ? caption : videoUrl | limitTo:100}}", "{dufmFirstValue: caption:100, videoUrl:100}")]
 	[InlineData("{{(Title ? Title : Body) | truncate:true:100}}", "{dufmFirstValue: Title:100, Body:100}")]
 	[InlineData("{{Title ? Title : (Body | ncRichText | truncate:true:20) | limitTo:100}}", "{dufmFirstValue: Title:100, Body:20}")]
@@ -232,6 +235,22 @@ public class BlockLabelUfmConverterTests
 		Assert.Equal(BlockLabelConversionStatus.NeedsManualReview, result.Status);
 		Assert.Equal("{umbContentName: value}", result.ConvertedLabel);
 		Assert.Contains(result.Warnings, x => x.Contains("udi") && x.Contains("{dufmFirstValue: value}"));
+	}
+
+	[Fact]
+	public void Link_title_in_a_fallback_chain_needs_review_without_Dragonfly_components()
+	{
+		var result = BlockLabelUfmConverter.Convert("{{ title.length > 0 ? title : primaryLink[0].name }}", ContentTypeName, UseDragonflyUfmComponents: false);
+
+		Assert.Equal(BlockLabelConversionStatus.NeedsManualReview, result.Status);
+	}
+
+	[Fact]
+	public void Fallback_chain_step_showing_another_link_property_than_it_tests_needs_review()
+	{
+		var result = BlockLabelUfmConverter.Convert("{{Link[0].name ? Link[0].url : Title}}", ContentTypeName);
+
+		Assert.Equal(BlockLabelConversionStatus.NeedsManualReview, result.Status);
 	}
 
 	[Fact]
